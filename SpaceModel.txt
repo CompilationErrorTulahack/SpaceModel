@@ -1,0 +1,69 @@
+import numpy as np
+from matplotlib import pylab, gridspec, pyplot as plt
+
+#%matplotlib inline
+plt.style.use('fivethirtyeight')
+
+class w:
+    def __init__(self):
+            self.a = [self.telo(np.float128(2 * 10**30), 0, 0, 0, 0, 'o', 'Sun'), self.telo(np.float128(6 * 10**24), 149600000000, 0, 0, 30000, 'o', 'Earth'), self.telo(np.float128(6 * 10**24), -149600000000, 0, 0, -30000, '^', 'Earth2')]
+    
+    class telo:
+        def __init__(self, m, X, Y, Vx, Vy, marker, name = ''):
+            self.stat = np.array([X, Y, Vx, Vy], dtype = np.float128)
+            self.name = name
+            self.marker = marker
+            self.m = m
+            self.ax = 0
+            self.ay = 0
+
+        def acc(self, x):
+            G = 6.67 * 10 **(-11)
+#              0    1    2     3
+# U =          X    Y    Vx   Vy 
+            #     V = (x[3]**2 + x[4]**2)**0.5
+            
+            R = ((self.stat[0] - x.stat[0])**2 + (self.stat[1] - x.stat[1])**2)**0.5
+
+            cos_a = (self.stat[0] - x.stat[0])/R
+            sin_a = (self.stat[1] - x.stat[1])/R
+
+            F = G * self.m * x.m / R**2
+            
+            #print(F*cos_a/x.m, F*cos_a/x.m)
+            
+            self.ax -= F*cos_a/self.m   #     Ax
+            self.ay -= F*sin_a/self.m    #     Ay
+            x.ax += F*cos_a/x.m     #     Ax
+            x.ay += F*sin_a/x.m   #     Ay
+        
+
+    def f(self, x):
+        return np.array([x.stat[2], x.stat[3], x.ax, x.ay], dtype = np.float128)
+    
+    def step(self):
+        global dt
+        for i in range(len(self.a)-1):
+            for j in range(i+1, len(self.a)):
+                self.a[i].acc(self.a[j])
+           
+        for i in range(len(self.a)):
+#             print(dt * self.f(self.a[i]))
+#             print(self.a[i].ax, self.a[i].ay)
+            self.a[i].stat += dt * self.f(self.a[i])
+            self.a[i].ax, self.a[i].ay = 0, 0 
+            plt.scatter(self.a[i].stat[0], self.a[i].stat[1], 10, 10, marker=self.a[i].marker)
+    
+
+wrld = w()
+dt = 3600 * 24
+plt.figure(figsize=(15,15))
+plt.grid(ls='--')
+t = 0
+while t <= 3600*24*366:
+    t += dt
+    if t == dt * 500:
+        wrld.a.append(wrld.telo(np.float128(2 * 10**28), 149600000, 0, 0, 0, 'o', 'Sun'))
+    wrld.step()
+# plt.show()
+plt.savefig("./Рабочий стол/bl2.png", bbox_inches="tight")
